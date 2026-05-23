@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+
+  # ============================================================
+  # SERVERUL CENTRAL - coordoneaza toate executiile din retea
+  # ============================================================
+  server:
+    build:
+      context: .                        # contextul de build e radacina proiectului
+      dockerfile: server/Dockerfile
+    image: motor-server
+    container_name: motor-server-node
+    stdin_open: true                    # necesar pentru consola interactiva (server>)
+    tty: true                           # aloca un terminal virtual in container
+    ports:
+      - "8506:8506"                     # expunem portul TCP al serverului pe masina gazda
+    volumes:
+      - ./output:/app/output            # fisierele generate de executii sunt vizibile si pe PC
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8506
+
+  # ============================================================
+  # CLIENTII / NODURILE DE CALCUL
+  # Fiecare client este un nod independent care poate expune scripturi
+  # si poate cere executia de pipeline-uri.
+  # Pentru a interactiona cu un client: docker attach motor-cli-node-X
+  # ============================================================
+
+  cli-1:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: motor-client
+    container_name: motor-cli-node-1
+    stdin_open: true                    # necesar pentru shell-ul interactiv (client>)
+    tty: true
+    environment:
+      - SERVER_IP=server                # "server" este numele serviciului de mai sus,
+      - SERVER_PORT=8506                # Docker Compose il rezolva automat la IP-ul containerului
+    depends_on:
+      - server                          # clientul porneste doar dupa ce serverul e gata
+
+  cli-2:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: motor-client
+    container_name: motor-cli-node-2
+    stdin_open: true
+    tty: true
+    environment:
+      - SERVER_IP=server
+      - SERVER_PORT=8506
+    depends_on:
+      - server
+
+  cli-3:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: motor-client
+    container_name: motor-cli-node-3
+    stdin_open: true
+    tty: true
+    environment:
+      - SERVER_IP=server
+      - SERVER_PORT=8506
+    depends_on:
+      - server
